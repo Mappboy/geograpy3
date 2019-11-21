@@ -1,4 +1,5 @@
 This is my own personal fork of Geograpy3.
+Although maybe this is all redudendent as I have found (mordecai)[https://github.com/openeventdata/mordecai]
 I want to update it for 2019, to use in another side project.
 I also wanted to test out Spacy performance for extracting locations as well.
 I have also updated the City Locations and added locale support.
