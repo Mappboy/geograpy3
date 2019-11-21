@@ -1,17 +1,25 @@
-<b>This entire repo is still under development and currently has only some basic functionality.  Pull requests to fix some of the outstading Issues would be appreciated, developers of all experience level welcome. </b>
+This is my own personal fork of Geograpy3.
+I want to update it for 2019, to use in another side project.
+I also wanted to test out Spacy performance for extracting locations as well.
+I have also updated the City Locations and added locale support.
+Lastly I may attempt to get it returning actually Geometries, if I get time.
+All credit belongs to the original fork of this https://github.com/jmbielec/geograpy3 
+and the many other forks of the original geograpy
+
 
 Geograpy3
 ========
 
-Geograpy3 fixes issues caused by using Geograpy with later versions of Python 3 (specifically in the Spyder IDE of Anaconda, but should work with Pyhon 3 in general). Most functionalities have remained the same as in Geograpy (and Geograpy2) while others may have changed slightly to work in Python 3.  Its core functionality is to extract place names from a URL or text, and add context to those names -- for example distinguishing between a country, region or city.  For more information on installation, usage, and syntax, please continue reading below.
+Geograpy3 fixes issues caused by using Geograpy with later versions of Python 3 
+(specifically in the Spyder IDE of Anaconda, but should work with Pyhon 3 in general). Most functionalities have remained the same as in Geograpy (and Geograpy2) while others may have changed slightly to work in Python 3.  Its core functionality is to extract place names from a URL or text, and add context to those names -- for example distinguishing between a country, region or city.  For more information on installation, usage, and syntax, please continue reading below.
 
 ## Install
 
 Grab the package using `pip` and `git` (this could take a few minutes)
 Try using one of the following:
 
-    1. pip install git+git://github.com/jmbielec/geograpy3.git 
-    2. pip install git+https://github.com/jmbielec/geograpy3.git 
+    1. pip install git+git://github.com/mappboy/geograpy3.git 
+    2. pip install git+https://github.com/mappboy/geograpy3.git 
 
 ## Getting Started
 
@@ -107,6 +115,7 @@ For branches/pull requests unrelated to Issues, please use standard naming conve
 
 
 ## Credits
+This fork is from [jmbielec' Geograpy](https://github.com/jmbielec/geograpy3 )
 Geograpy3 was originally forked from [lesingerouge's Geograpy](https://github.com/lesingerouge/geograpy), who originally forked from [ushahidi's Geograpy](https://github.com/ushahidi/geograpy), who I believe is the original creator of Geograpy.  Geograpy3 also used some material and inspiration from [Corollarium's Geograpy2](https://github.com/Corollarium/geograpy2).
 
 

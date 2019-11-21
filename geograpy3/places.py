@@ -1,11 +1,29 @@
-import os
-import inspect
 import csv
+import inspect
+import os
 import sqlite3
 from collections import Counter
 
 import jellyfish
 import pycountry
+
+SUPPORTED_LOCALES = {
+    'en',
+    'es',
+    'fr',
+    'ja',
+    'pt-BR',
+    'ru',
+    'zh-CN'
+}
+
+
+class BadLocaleException(BaseException):
+    """
+    Bad Locale
+    """
+    def __init__(self, locale_provided):
+        self.message = f"{locale_provided} is wrong must be one of {','.join(SUPPORTED_LOCALES)}"
 
 
 # hat tip http://stackoverflow.com/a/1342373/2367526
@@ -18,6 +36,7 @@ def fuzzy_match(s1, s2, max_dist=.8):
     """Function that checks if two strings match."""
     return jellyfish.jaro_distance(s1, s2) >= max_dist
 
+
 """
 Takes a list of place names and works place designation (country, region, etc.)
 and relationships between places (city is inside region is inside country, etc.)
@@ -27,15 +46,21 @@ and relationships between places (city is inside region is inside country, etc.)
 class PlaceContext(object):
     """Class that matches strings to places."""
 
-    def __init__(self, place_names, db_file = None):
+    def __init__(self, place_names, db_file=None, locale='en'):
         """Init method."""
         db_file = db_file or \
-            os.path.dirname(os.path.realpath(inspect.stack()[0][1])) + "/locs.db"
+                  os.path.dirname(os.path.realpath(inspect.stack()[0][1])) + "/locs.db"
         self.conn = sqlite3.connect(db_file)
+        self.locale = locale
         if not self.db_has_data():
             self.populate_db()
-
         self.places = place_names
+        self.country_mentions = 0
+        self.countries = []
+
+    def check_locale(self):
+        if self.locale not in SUPPORTED_LOCALES:
+            raise BadLocaleException(self.locale)
 
     def populate_db(self):
         """Method used to populate the data db."""
@@ -44,23 +69,33 @@ class PlaceContext(object):
 
         table_creation = '''CREATE TABLE cities
             (geoname_id INTEGER,
+             locale_code TEXT,
              continent_code TEXT,
              continent_name TEXT,
              country_iso_code TEXT,
              country_name TEXT,
              subdivision_iso_code TEXT,
              subdivision_name TEXT,
+             subdivision_2_iso_code TEXT, 
+             subdivision_2_name TEXT,
              city_name TEXT,
              metro_code TEXT,
-             time_zone TEXT)'''
+             time_zone TEXT,
+             is_in_european_union BOOLEAN)'''
         cur.execute(table_creation)
         cur_dir = os.path.dirname(os.path.realpath(inspect.stack()[0][1]))
-        with open(cur_dir + "/data/GeoLite2-City-Locations.csv", "r", encoding = 'utf8') as info:
+        with open(cur_dir + f"/data/GeoLite2-City-Locations-{self.locale}.csv", "r", encoding='utf8') as info:
             reader = csv.reader(info)
             for row in reader:
-                cur.execute("INSERT INTO cities VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", row)
+                cur.execute("INSERT INTO cities VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", row)
 
             self.conn.commit()
+
+        # Create indexes
+        cur.execute("CREATE INDEX ix_city_name ON cities(city_name);")
+        cur.execute("CREATE INDEX ix_subdivision_name ON cities(subdivision_name);")
+        cur.execute("CREATE INDEX ix_country_name ON cities(country_name);")
+        cur.execute("CREATE INDEX ix_continent_name ON cities(continent_name);")
 
     def db_has_data(self):
         """Method used to check if the db has the data correctly."""
@@ -79,7 +114,7 @@ class PlaceContext(object):
     def correct_country_mispelling(self, s):
         """Method used to correct country mispellings."""
         cur_dir = os.path.dirname(os.path.realpath(inspect.stack()[0][1]))
-        with open(cur_dir + "/data/ISO3166ErrorDictionary.csv", "r", encoding = 'utf8') as info:
+        with open(cur_dir + "/data/ISO3166ErrorDictionary.csv", "r", encoding='utf8') as info:
             reader = csv.reader(info)
             for row in reader:
                 if s in remove_non_ascii(row[0]):
@@ -87,7 +122,7 @@ class PlaceContext(object):
 
         return s
 
-    def is_a_country(self, s): 
+    def is_a_country(self, s):
         s = self.correct_country_mispelling(s)
         try:
             pycountry.countries.get(name=s)
@@ -97,7 +132,7 @@ class PlaceContext(object):
 
     def places_by_name(self, place_name, column_name):
         cur = self.conn.cursor()
-        cur.execute('SELECT * FROM cities WHERE ' + column_name + ' = "' + place_name + '"')
+        cur.execute(f'SELECT * FROM cities WHERE {column_name} = "{place_name}"')
         rows = cur.fetchall()
 
         if len(rows) > 0:
@@ -198,7 +233,7 @@ class PlaceContext(object):
                 self.country_cities[country_name].append(city_name)
 
                 if country_name in self.country_regions and \
-                   region_name in self.country_regions[country_name]:
+                        region_name in self.country_regions[country_name]:
                     self.address_strings.append(city_name + ", " +
                                                 region_name + ", " +
                                                 country_name)
@@ -217,4 +252,3 @@ class PlaceContext(object):
                        not in l for l in places)
 
         self.other = [p for p in self.places if unused(p)]
-        
